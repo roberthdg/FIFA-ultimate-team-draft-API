@@ -10,6 +10,7 @@ dotenv.config();
 mongoose.connect('mongodb+srv://roberthdg:'+process.env.MONGO_ATLAS_PW+'@fut-api-database-vptdu.mongodb.net/test?retryWrites=true&w=majority',
 { useNewUrlParser: true, useUnifiedTopology: true });
 
+//middleware
 app.use(morgan('dev'));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
