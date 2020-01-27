@@ -3,9 +3,10 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const models = require('./models');
 const multer = require('multer');
-var bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-const storage = multer.diskStorage({
+const fileStorageSettings = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, 'src/uploads/')
     }, 
@@ -14,19 +15,45 @@ const storage = multer.diskStorage({
     }
 });
 
-const fileFilter = (req, file, cb) => {
-    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-        cb(null, true);
-    } else {
-        cb(null, false);
-    }
+const fileTypeFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') cb(null, true);
+    else cb(null, false);
 };
 
 const upload = multer({
-    storage: storage, 
+    storage: fileStorageSettings, 
     limits: {fileSize: 1024 * 1024 * 5}, 
-    fileFilter: fileFilter
+    fileFilter: fileTypeFilter
 });
+
+function generateAccessToken(email, id) {
+    return jwt.sign({
+       email: email,
+       _id: id
+    }, process.env.ACCESS_TOKEN_SECRET, {
+       expiresIn: "1h"
+    });  
+}
+
+function generateRefreshToken(email, id) {
+    return jwt.sign({
+       email: email,
+       _id: id
+    }, process.env.REFRESH_TOKEN_SECRET)
+}
+
+function apiAuthenticationMiddleware() {  
+	return (req, res, next) => {
+      try {
+         const accessToken = req.headers.authorization.split(" ")[1];
+         const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+         req.userData = decoded;
+         next();
+      } catch (error){
+         return res.status(401).json({message:'Auth Failed'});
+      }
+	}
+}
 
 router.post('/signup', (req, res) => {
 
@@ -41,24 +68,40 @@ router.post('/signup', (req, res) => {
                 email: req.body.email,
                 password: hash
             });
-
+            
             user.save()
                 .then(result=>{
                     res.status(201).json({
-                        message:'User created'
+                        message: 'User registered suscessfully',
+                        accessToken: generateAccessToken(user.email, user._id),
+                        refreshToken: generateRefreshToken(user.email, user._id)
                     });
                 })
                 .catch(err => {
                     if(err.code==11000) res.status(409).json({error: 'Email already exists'})
-
                     else res.status(500).json({error:err.message});
                 })
         }
     });
-   
  });
 
-router.get('/search/:playerId', (req, res) => {
+ router.post('/login', (req, res) => { 
+    models.User.find({email: req.body.email}).exec()
+    .then(user=>{
+        if(user.length<1) return res.status(401).json({error: "Auth failed"});
+
+        bcrypt.compare(req.body.password, user[0].password, (err, result) => {
+            if(result == true) {
+                const accessToken = generateAccessToken(user[0].email, user[0]._id) 
+                res.status(200).json({message: "successful login", accessToken: accessToken});
+            }
+            else res.status(401).json({error: "Auth failed"})
+        });
+    })
+    .catch(err => res.status(500).json({error: err}))
+ });
+
+ router.get('/search/:playerId', (req, res) => {
     id=req.params.playerId;
     models.Player.findById(id)
     .select('name position _id')
@@ -66,69 +109,52 @@ router.get('/search/:playerId', (req, res) => {
         if(doc) res.status(200).json({player: doc});
         else res.status(404).json({message: 'Player not found'})
     })
-    .catch(err => {
-        res.status(500).json({error: err})
-    })
+    .catch(err => res.status(500).json({error: err}));
 });
 
-router.get('/search', (req, res) => {
+router.get('/list', apiAuthenticationMiddleware(), (req, res) => {
     models.Player.find()
     .select('name position _id')
     .exec()
     .then(doc => {
         res.status(200).json(doc);
     })
-    .catch(err => {
-        res.status(500).json({error: err})
-    })
+    .catch(err => res.status(500).json({error: err}));
 });
 
-router.delete('/:playerId', (req,res) => {
-    id=req.params.playerId;
-    models.Player.remove({_id: id})
-    .exec()
-    .then(result => {
-        res.status(200).json({message:'Player deleted succesfully'});
-    })
-    .catch(err => {
-        res.status(500).json({error: err})
-    })
-});
-
-router.post('/submit', upload.single('playerCard') ,(req, res) => {
+router.post('/submit', apiAuthenticationMiddleware(), upload.single('playerCard'),(req, res) => {
     const player = new models.Player({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         position: req.body.position,
         card: req.file.path
     });
-
     player.save()
-    .then(result => {
-        res.status(200).json({createdPlayer: player});
-    })
-    .catch(err => { 
-        res.status(500).json({error: err})
-    });
-
+    .then(result => res.status(200).json({createdPlayer: player}))
+    .catch(err => res.status(500).json({error: err}));
 });
 
-router.patch('/:playerId', (req,res) => {
+router.delete('/:playerId', apiAuthenticationMiddleware(), (req,res) => {
+    id=req.params.playerId;
+    models.Player.remove({_id: id}).exec()
+    .then(result => {
+        res.status(200).json({message:'Player deleted succesfully'});
+    })
+    .catch(err => res.status(500).json({error: err}));
+});
+
+router.patch('/:playerId', apiAuthenticationMiddleware(), (req,res) => {
     id=req.params.playerId;
     let updateFields = {}
     for(const fields of req.body) {
-        updateFields[fields.propName] = fields.value 
+        updateFields[fields.name] = fields.value 
     }
     
-    models.Player.update({_id: id}, { $set: updateFields })
-    .exec()
+    models.Player.update({_id: id}, { $set: updateFields }).exec()
     .then(result => {
         res.status(200).json(result);
     })
-    .catch(err => {
-        res.status(500).json({error: err})
-    })
+    .catch(err => res.status(500).json({error: err}));
 });
-
 
 module.exports = router;
