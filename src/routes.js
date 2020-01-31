@@ -41,6 +41,8 @@ router.post('/signup', controllers.userSignup);
 
 router.post('/login', controllers.userLogin);
 
+router.post('/token', controllers.refreshToken);
+
 router.get('/search/:playerId', controllers.playerSearch);
 
 router.post('/draft', controllers.playerDraft);

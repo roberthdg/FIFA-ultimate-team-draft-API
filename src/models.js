@@ -2,8 +2,17 @@ const mongoose = require('mongoose');
 
 const playerSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    name: {type: String, required: true},
-    position: {type: String, required: true},
+    name: {
+        type: String, 
+        required: true,
+        trim: true,
+        minlength: 2
+    },
+    position: {
+        type: String, 
+        required: true,
+        trim: true
+    },
     cardImage: {type: String, required: true}
 });
 

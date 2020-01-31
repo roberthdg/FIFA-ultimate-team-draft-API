@@ -26,8 +26,9 @@ exports.userLogin = (req, res) => {
 
         bcrypt.compare(req.body.password, user[0].password, (err, result) => {
             if(result == true) {
-                const accessToken = generateAccessToken(user[0].email, user[0]._id) 
-                res.status(200).json({message: "successful login", accessToken: accessToken});
+                const accessToken = generateAccessToken(user[0].email, user[0]._id);
+                const refreshToken = generateRefreshToken(user[0].email, user[0]._id);
+                res.status(200).json({message: "successful login", accessToken: accessToken, refreshToken: refreshToken});
             }
             else res.status(401).json({error: "Auth failed"})
         });
@@ -49,7 +50,7 @@ exports.userSignup = (req, res) => {
             });
             
             user.save()
-                .then(result=>{
+                .then(result=> {
                     res.status(201).json({
                         message: 'User registered suscessfully',
                         accessToken: generateAccessToken(user.email, user._id),
@@ -64,12 +65,24 @@ exports.userSignup = (req, res) => {
     });
 }
 
+exports.refreshToken = (req, res) => {
+    //generates new access token
+    try {
+        let refreshToken = req.body.token;
+        var decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        return res.status(200).json({
+            accessToken: generateAccessToken(decoded.email, decoded._id)
+            });
+      } catch(err) { 
+        return res.status(401).json({error: "Auth failed"})
+      }
+}
+    
+
 exports.playerDraft = (req, res) => {
     //selects 5 random players of a given position
     models.Player.aggregate([{ $match: {"position": req.body.position} }, { $sample: { size: 5 } }]).exec()
-    .then(doc => {
-        res.status(200).json(doc);
-    })
+    .then(doc => res.status(200).json(doc))
     .catch(err => res.status(500).json({error: err}));
 }
 
@@ -81,7 +94,7 @@ exports.playerSubmit = (req, res) => {
         cardImage: req.file.path
     });
     player.save()
-    .then(result => res.status(200).json({createdPlayer: player}))
+    .then(res.status(200).json({createdPlayer: player}))
     .catch(err => res.status(500).json({error: err}));
 }
 
@@ -107,9 +120,7 @@ exports.playerList = (req, res) => {
 exports.playerDelete = (req,res) => {
     id=req.params.playerId;
     models.Player.remove({_id: id}).exec()
-    .then(result => {
-        res.status(200).json({message:'Player deleted succesfully'});
-    })
+    .then(res.status(200).json({message:'Player deleted succesfully'}))
     .catch(err => res.status(500).json({error: err}));
 }
 
@@ -119,10 +130,7 @@ exports.playerUpdate = (req,res) => {
     for(const fields of req.body) {
         updateFields[fields.name] = fields.value 
     }
-    
     models.Player.update({_id: id}, { $set: updateFields }).exec()
-    .then(result => {
-        res.status(200).json(result);
-    })
-    .catch(res.status(500).json({error: err}));
+    .then(result => res.status(200).json(result))
+    .catch(err => res.status(500).json({error: err}));
 }
