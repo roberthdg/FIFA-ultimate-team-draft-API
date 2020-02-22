@@ -47,7 +47,7 @@ router.get('/search/:playerId', controllers.playerSearch);
 
 router.post('/draft', controllers.playerDraft);
 
-router.get('/all', apiAuthenticationMiddleware(), controllers.playerList);
+router.get('/all', controllers.playerList);
 
 router.post('/submit', apiAuthenticationMiddleware(), fileUploadSettings.single('playerCard'), controllers.playerSubmit);
 
