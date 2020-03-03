@@ -69,15 +69,14 @@ exports.refreshToken = (req, res) => {
     //generates new access token
     try {
         let refreshToken = req.body.token;
-        var decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        let decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         return res.status(200).json({
             accessToken: generateAccessToken(decoded.email, decoded._id)
-            });
-      } catch(err) { 
+        });
+    } catch(err) { 
         return res.status(401).json({error: "Auth failed"})
       }
 }
-    
 
 exports.playerDraft = (req, res) => {
     //selects 5 random players of a given position
@@ -87,11 +86,16 @@ exports.playerDraft = (req, res) => {
 }
 
 exports.playerSubmit = (req, res) => {
+    console.log(req.file)
     const player = new models.Player({
         _id: new mongoose.Types.ObjectId(),
-        name: req.body.name,
+        role: req.body.role,
         position: req.body.position,
-        cardImage: req.file.path
+        nation: req.body.nation,
+        league: req.body.league,
+        club: req.body.club,
+        rating: req.body.rating,
+        cardImage: req.file.filename
     });
     player.save()
     .then(res.status(200).json({createdPlayer: player}))
@@ -101,7 +105,7 @@ exports.playerSubmit = (req, res) => {
 exports.playerSearch = (req, res) => {
     id=req.params.playerId;
     models.Player.findById(id)
-    .select('name position _id')
+    .select('nation position rating _id')
     .then(doc => {
         if(doc) res.status(200).json({player: doc});
         else res.status(404).json({message: 'Player not found'})
@@ -110,7 +114,7 @@ exports.playerSearch = (req, res) => {
 }
 
 exports.playerList = (req, res) => {
-    models.Player.find().select('name position _id').exec()
+    models.Player.find().select('position role nation league club rating cardImage _id').exec()
     .then(doc => {
         res.status(200).json(doc);
     })

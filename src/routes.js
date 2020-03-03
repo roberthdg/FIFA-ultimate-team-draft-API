@@ -49,9 +49,9 @@ router.post('/draft', controllers.playerDraft);
 
 router.get('/all', controllers.playerList);
 
-router.post('/submit', apiAuthenticationMiddleware(), fileUploadSettings.single('playerCard'), controllers.playerSubmit);
+router.post('/submit', fileUploadSettings.single('cardImage'), controllers.playerSubmit);
 
-router.delete('/:playerId', apiAuthenticationMiddleware(), controllers.playerDelete);
+router.delete('/:playerId', controllers.playerDelete);
 
 router.patch('/:playerId', apiAuthenticationMiddleware(), controllers.playerUpdate);
 
