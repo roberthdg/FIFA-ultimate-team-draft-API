@@ -80,13 +80,16 @@ exports.refreshToken = (req, res) => {
 
 exports.playerDraft = (req, res) => {
     //selects 5 random players given a position and role
-    models.Player.aggregate([{ $match: { $or: [{"position": req.body.position}, {"role": req.body.role}] } }, { $sample: { size: 5 } }]).exec()
+    models.Player.aggregate([
+        { $match: { $or: [{"position": req.body.position}, {"role": req.body.role}] } }, 
+        { $match: { "cardImage": {$nin: req.body.draftedPlayers} } }, 
+        { $sample: { size: 5 } }])
+    .exec()
     .then(doc => res.status(200).json(doc))
     .catch(err => res.status(500).json({error: err}));
 }
 
 exports.playerSubmit = (req, res) => {
-    console.log(req.file)
     const player = new models.Player({
         _id: new mongoose.Types.ObjectId(),
         role: req.body.role,
