@@ -141,3 +141,39 @@ exports.playerUpdate = (req,res) => {
     .then(result => res.status(200).json(result))
     .catch(err => res.status(500).json({error: err}));
 }
+
+exports.squadSubmit = (req, res) => {
+    console.log(req.body)
+    const squad = new models.Squad({
+        _id: new mongoose.Types.ObjectId(),
+        name: req.body.name,
+        rating: req.body.rating,
+        formation: req.body.formation,
+        data: req.body.data
+    });
+    squad.save()
+    .then(res.status(200).json({squad: squad}))
+    .catch(err => res.status(500).json({error: err}));
+}
+
+exports.squadSearch = (req, res) => {
+    id=req.params.squadId;
+    models.Squad.findById(id)
+    .select('data rating formation name')
+    .then(doc => {
+        if(doc) res.status(200).json({squad: doc});
+        else res.status(404).json({message: 'Squad not found'})
+    })
+    .catch(err => res.status(500).json({error: err}));
+}
+
+exports.squadLeaderboard = (req, res) => {
+    models.Squad.find().select('rating name _id')
+    .sort({rating: -1})
+    .limit(50)
+    .exec()
+    .then(doc => {
+        res.status(200).json(doc);
+    })
+    .catch(err => res.status(500).json({error: err}));
+}

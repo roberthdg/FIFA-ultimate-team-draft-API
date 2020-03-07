@@ -43,16 +43,22 @@ router.post('/login', controllers.userLogin);
 
 router.post('/token', controllers.refreshToken);
 
-router.get('/search/:playerId', controllers.playerSearch);
-
 router.post('/draft', controllers.playerDraft);
 
-router.get('/all', controllers.playerList);
+router.get('/squad/:squadId', controllers.squadSearch);
 
-router.post('/submit', fileUploadSettings.single('cardImage'), controllers.playerSubmit);
+router.post('/submit', controllers.squadSubmit);
 
-router.delete('/:playerId', controllers.playerDelete);
+router.get('/leaderboard', controllers.squadLeaderboard);
+
+router.get('/player/:playerId', controllers.playerSearch);
+
+router.post('/p/submit', apiAuthenticationMiddleware(), fileUploadSettings.single('cardImage'), controllers.playerSubmit);
+
+router.delete('/:playerId', apiAuthenticationMiddleware(), controllers.playerDelete);
 
 router.patch('/:playerId', apiAuthenticationMiddleware(), controllers.playerUpdate);
+
+router.get('/all', apiAuthenticationMiddleware(), controllers.playerList);
 
 module.exports = router;
