@@ -30,6 +30,7 @@ function apiAuthenticationMiddleware() {
          const accessToken = req.headers.authorization.split(" ")[1];
          const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
          req.userData = decoded;
+         if(req.userData.email!==process.env.ADMIN)  return res.status(401).json({message:'Auth Failed'});
          next();
       } catch (error){
          return res.status(401).json({message:'Auth Failed'});
