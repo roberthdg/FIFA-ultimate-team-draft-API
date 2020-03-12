@@ -1,25 +1,25 @@
-# FIFA-ultimate-team-draft-api
+# FUTdraft API
 
 ## General info
-RESTful API for the FUT Draft web application.
+RESTful API for the FIFA Ultimate Team Draft web application.
 	
 ## Technologies
 Project created with:
-* Node v12.14
-* npm v6.13
+* NodeJS
+* Express.js
 * MongoDB Atlas
 	
 ## Endpoints
 
 The REST API endpoints to the FUT Draft app are described below.
 
-### Get draft of 5 players per position 
+### Get draft of 5 players per position (append array of previously drafted players)
 
 ### Request 
 
 `post /draft/`
 
-    curl -i -H 'Accept: application/json' -d 'position=ST' http://localhost:3000/draft/
+    curl -i -H 'Content-Type: application/json' --request POST -d '{"potision":"ST","role":"attack","draftedPlayers": []}' http://localhost:3030/draft/
 
 ### Response
 
@@ -29,19 +29,69 @@ The REST API endpoints to the FUT Draft app are described below.
     Connection: close
     Content-Type: application/json
 
-    [{"id":1,"name":"Salomón Rondón", "cardImage":"9128181284salomon-rondon.jpg"},
-    {"id":56,"name":"Luis Suarez", "cardImage":"988312383luis-suarez.jpg"},
-    {"id":89,"name":"Pierre-Emerick Aubameyang", "cardImage":"9128181284pierre-aubameyang.jpg"},
-    {"id":12,"name":"Timo Werner", "cardImage":"9128181284timo-werner.jpg"},
-    {"id":34,"name":"Jamie Vardy", "cardImage":"9128181284jamie-vardy.jpg"}]
+    [{
+        "_id": "5e611fb30d5ed40cf434d7d0",
+        "role": "attack",
+        "position": "ST",
+        "nation": "Norway",
+        "league": "Bundesliga",
+        "club": "Borussia Dortmund",
+        "rating": 90,
+        "cardImage": "1583423411419haland.png",
+        "__v": 0
+    },
+    {
+        "_id": "5e60478aaa50c43474195328",
+        "role": "attack",
+        "position": "RW",
+        "nation": "Brazil",
+        "league": "Premier League",
+        "club": "Chelsea",
+        "rating": 86,
+        "cardImage": "1583368074098willian.png",
+        "__v": 0
+    },
+    {
+        "_id": "5e605a3511644e39b0487fec",
+        "role": "attack",
+        "position": "ST",
+        "nation": "England",
+        "league": "Premier League",
+        "club": "Leicester City",
+        "rating": 87,
+        "cardImage": "1583372853718vardy.png",
+        "__v": 0
+    },
+    {
+        "_id": "5e6004fcbde6cc2cc03e4225",
+        "role": "attack",
+        "position": "LW",
+        "nation": "France",
+        "league": "La Liga",
+        "club": "Barcelona",
+        "rating": 90,
+        "cardImage": "1583351036594griezmann.png",
+        "__v": 0
+    },
+    {
+        "_id": "5e61cdecc96a973b28015efb",
+        "role": "attack",
+        "position": "RW",
+        "nation": "Argentina",
+        "league": "La Liga",
+        "club": "Barcelona",
+        "rating": 96,
+        "cardImage": "1583468012352messi.png",
+        "__v": 0
+    }]
 
-### Search a player by ID
+### Search a squad by ID
 
 ### Request 
 
-`get /search/:id`
+`get /squad/:id`
 
-    curl -i -H 'Accept: application/json' http://localhost:3000/search/100
+    curl -i -H 'Accept: application/json' http://localhost:3030/squad/5e6633cec8e0df0024e2a753
 
 ### Response
 
@@ -51,5 +101,14 @@ The REST API endpoints to the FUT Draft app are described below.
     Connection: close
     Content-Type: application/json
 
-    {"id":100,"name":"Lionel Messi","cardImage":"213131234lionel-messi.jpg"}
+    {
+    "squad": {
+        "_id": "5e6633cec8e0df0024e2a753",
+        "name": "Liga Santander",
+        "rating": 88.6,
+        "formation": "[1,5,8]",
+        "data": "[{\"fieldPosition\":\"GK\"..."
+    	}
+    }
+
 
